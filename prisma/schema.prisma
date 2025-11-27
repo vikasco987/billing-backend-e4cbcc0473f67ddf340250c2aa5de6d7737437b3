@@ -293,12 +293,10 @@ model Upload {
 }
 
 // ===================== DELETE HISTORY =====================
-
 model DeleteHistory {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
   billId     String
   deletedBy  String?
   snapshot   Json
-  deletedAt  DateTime @default(now())
+  deletedAt  DateTime @default(now())   // ✅ this is the timestamp field
 }
-

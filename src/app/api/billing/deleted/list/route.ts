@@ -12,11 +12,11 @@ export async function GET(req: NextRequest) {
 
     const deletedBills = await prisma.deleteHistory.findMany({
       where: { deletedBy: userId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { deletedAt: "desc" },  // ✅ FIXED
     });
 
     return NextResponse.json({ success: true, data: deletedBills });
   } catch (error) {
-    return NextResponse.json({ error: error }, { status: 500 });
+    return NextResponse.json({ error: String(error) }, { status: 500 });
   }
 }
