@@ -179,30 +179,24 @@
 
 
 
-
-
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
-    // ⭐ Get authenticated user
     const { userId } = getAuth(req);
+    console.log("Clerk userId:", userId);
 
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // ⭐ Fetch deleted bills only for this user
     const deletedBills = await prisma.deleteHistory.findMany({
-      where: { deletedBy: userId },
       orderBy: { deletedAt: "desc" },
     });
 
+    console.log("Deleted Bills from DB:", deletedBills);
+
     return NextResponse.json({ success: true, data: deletedBills });
   } catch (err) {
-    console.error("FETCH DELETE HISTORY ERROR →", err);
+    console.error("FETCH DELETED BILLS ERROR →", err);
     return NextResponse.json(
       { error: "Server error", details: String(err) },
       { status: 500 }
