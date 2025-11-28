@@ -151,23 +151,56 @@
 
 
 
-import { NextResponse } from "next/server";
+// import { NextResponse } from "next/server";
+// import { getAuth } from "@clerk/nextjs/server";
+// import prisma from "@/lib/prisma";
+
+// export async function GET(req: Request) {
+//   try {
+//     const { userId } = getAuth(req);
+
+//     if (!userId) {
+//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+//     }
+
+//     const deleted = await prisma.deleteHistory.findMany({
+//       orderBy: { deletedAt: "desc" }, // FIXED
+//     });
+
+//     return NextResponse.json({ deleted });
+//   } catch (err) {
+//     console.error("FETCH DELETE HISTORY ERROR →", err);
+//     return NextResponse.json(
+//       { error: "Server error", details: String(err) },
+//       { status: 500 }
+//     );
+//   }
+// }
+
+
+
+
+
+import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
+    // ⭐ Get authenticated user
     const { userId } = getAuth(req);
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const deleted = await prisma.deleteHistory.findMany({
-      orderBy: { deletedAt: "desc" }, // FIXED
+    // ⭐ Fetch deleted bills only for this user
+    const deletedBills = await prisma.deleteHistory.findMany({
+      where: { deletedBy: userId },
+      orderBy: { deletedAt: "desc" },
     });
 
-    return NextResponse.json({ deleted });
+    return NextResponse.json({ success: true, data: deletedBills });
   } catch (err) {
     console.error("FETCH DELETE HISTORY ERROR →", err);
     return NextResponse.json(
