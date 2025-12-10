@@ -29,17 +29,22 @@ enum FieldType {
 // ===================== CATEGORY =====================
 
 model Category {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  parentId  String?    @db.ObjectId
-  parent    Category?  @relation("Subcategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  children  Category[] @relation("Subcategories")
-  items     Item[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id       String     @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  parentId String?    @db.ObjectId
+  parent   Category?  @relation("Subcategories", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children Category[] @relation("Subcategories")
+  items    Item[]
+
+  // ⭐ REQUIRED FOR InventoryItem
+  inventoryItems InventoryItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ===================== ITEM =====================
+
 model Item {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
   name          String
@@ -63,10 +68,11 @@ model Item {
   variants      Json?
   imageUrl      String?
   gallery       String[]
-  categoryId    String   @db.ObjectId
-  category      Category @relation(fields: [categoryId], references: [id])
 
-  clerkId String // Clerk user ID stored separately
+  categoryId String   @db.ObjectId
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  clerkId String
   userId  String @db.ObjectId
   user    User   @relation(fields: [userId], references: [id])
 
@@ -84,13 +90,10 @@ model Party {
   address String?
   dob     DateTime?
 
-  // ✅ Store Clerk User ID of the creator
   createdBy String
   user      User?  @relation(fields: [createdBy], references: [clerkId])
 
-  // ✅ Relation to bills (if this customer is billed)
-  bills Bill[]
-
+  bills     Bill[]
   createdAt DateTime @default(now())
 }
 
@@ -122,13 +125,11 @@ model Bill {
   notes         String?
   dueDate       DateTime?
 
-  // 🔹 New optional fields for Hold feature
-  holdBy    String? // clerkId of the user who held the bill
-  holdAt    DateTime? // timestamp when bill was held
+  holdBy    String?
+  holdAt    DateTime?
   resumedAt DateTime?
   isHeld    Boolean   @default(false)
 
-  // ✅ New company fields added
   companyName    String?
   companyAddress String?
   companyPhone   String?
@@ -142,15 +143,15 @@ model Bill {
   createdAt DateTime      @default(now())
 }
 
-// ===================== BILLPRODUCT =====================
+// ===================== BILL PRODUCT =====================
 
 model BillProduct {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   billId      String   @db.ObjectId
   productId   String   @db.ObjectId
   productName String?
-  bill        Bill     @relation(fields: [billId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  product     Product? @relation(fields: [productId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  bill        Bill     @relation(fields: [billId], references: [id])
+  product     Product? @relation(fields: [productId], references: [id])
   quantity    Int
   price       Float
   discount    Float?
@@ -163,7 +164,7 @@ model BillProduct {
 model BillHistory {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   billId    String   @db.ObjectId
-  bill      Bill     @relation(fields: [billId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  bill      Bill     @relation(fields: [billId], references: [id])
   snapshot  Json
   createdAt DateTime @default(now())
 }
@@ -173,7 +174,7 @@ model BillHistory {
 model Payment {
   id     String   @id @default(auto()) @map("_id") @db.ObjectId
   billId String   @db.ObjectId
-  bill   Bill     @relation(fields: [billId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  bill   Bill     @relation(fields: [billId], references: [id])
   amount Float
   mode   String
   paidAt DateTime @default(now())
@@ -200,28 +201,33 @@ model PurchaseItem {
   itemId     String   @db.ObjectId
   quantity   Int
   price      Float
-  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  item       Item     @relation(fields: [itemId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  purchase   Purchase @relation(fields: [purchaseId], references: [id])
+  item       Item     @relation(fields: [itemId], references: [id])
+
+  // ⭐ REQUIRED FOR InventoryItem
+  inventoryItemId String?
+  inventoryItem   InventoryItem? @relation(fields: [inventoryItemId], references: [id])
 }
 
 // ===================== USER =====================
 
 model User {
-  id        String            @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  email     String            @unique
-  clerkId   String            @unique
-  role      Role              @default(USER)
-  bills     Bill[]
-  items     Item[]
-  forms     Form[]
-  profiles  BusinessProfile[]
-  uploads   Upload[]
-  purchases Purchase[]
-  parties   Party[]
-
-  // 🔥 Add this for creator relation
+  id              String            @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  email           String            @unique
+  clerkId         String            @unique
+  role            Role              @default(USER)
+  bills           Bill[]
+  items           Item[]
+  forms           Form[]
+  profiles        BusinessProfile[]
+  uploads         Upload[]
+  purchases       Purchase[]
+  parties         Party[]
   profilesCreated BusinessProfile[] @relation("ProfileCreator")
+
+  // ⭐ REQUIRED FOR InventoryItem
+  inventoryItems InventoryItem[]
 }
 
 // ===================== FORM =====================
@@ -239,7 +245,7 @@ model Form {
 model Field {
   id        String    @id @default(auto()) @map("_id") @db.ObjectId
   formId    String    @db.ObjectId
-  form      Form      @relation(fields: [formId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  form      Form      @relation(fields: [formId], references: [id])
   label     String
   type      FieldType
   required  Boolean   @default(false)
@@ -252,6 +258,7 @@ model Field {
 }
 
 // ===================== BUSINESS PROFILE =====================
+
 model BusinessProfile {
   id                 String  @id @default(auto()) @map("_id") @db.ObjectId
   userId             String
@@ -270,7 +277,6 @@ model BusinessProfile {
   logoUrl            String?
   signatureUrl       String?
 
-  // 🧾 Added fields for business details
   gstNumber       String?
   businessAddress String?
   state           String?
@@ -295,10 +301,56 @@ model Upload {
 // ===================== DELETE HISTORY =====================
 
 model DeleteHistory {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  billId     String
-  deletedBy  String?
-  snapshot   Json
-  deletedAt  DateTime @default(now())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  billId    String
+  deletedBy String?
+  snapshot  Json
+  deletedAt DateTime @default(now())
 }
 
+// ===================== INVENTORY ITEM =====================
+
+model InventoryItem {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  description   String?
+  price         Float?
+  mrp           Float?
+  purchasePrice Float?
+  sellingPrice  Float?
+  gst           Float?
+  discount      Float?
+  stock         Int?
+  openingStock  Int?
+  currentStock  Int?
+  reorderLevel  Int?
+  unit          String?
+  barcode       String?
+  brand         String?
+  model         String?
+  size          String?
+  color         String?
+  variants      Json?
+  imageUrl      String?
+  gallery       String[]
+
+  searchKey   String?
+  autoMatched Boolean? @default(false)
+  externalRef String?
+  slug        String?  @unique
+  tags        String[]
+
+  categoryId String   @db.ObjectId
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  clerkId String
+  userId  String @db.ObjectId
+  user    User   @relation(fields: [userId], references: [id])
+
+  purchases PurchaseItem[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([searchKey])
+  @@index([externalRef])
+}

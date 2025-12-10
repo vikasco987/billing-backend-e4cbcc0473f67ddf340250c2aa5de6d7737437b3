@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
-export async function POST(req: Request, { params }: any) {
+export async function POST(req: NextRequest, { params }: any) {
   try {
+    // ⭐ Clerk Auth
     const { userId } = getAuth(req);
 
     if (!userId) {
