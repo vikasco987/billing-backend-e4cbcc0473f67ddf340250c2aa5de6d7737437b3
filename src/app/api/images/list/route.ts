@@ -6,7 +6,7 @@ if (!MONGO_IMG_URI) {
   throw new Error("❌ Missing IMAGES_DB_URL in .env");
 }
 
-export async function connectImagesDb() {
+export async function c-onnectImagesDb() {
   if (mongoose.connection.readyState === 1) {
     console.log("✔ Images DB already connected");
     return;
