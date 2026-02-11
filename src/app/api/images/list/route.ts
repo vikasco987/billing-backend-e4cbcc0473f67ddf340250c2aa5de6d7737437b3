@@ -51,3 +51,13 @@
 // // Avoid recompiling model during hot reload
 // export const FoodImageModel =
 //   models.FoodImage || model("FoodImage", foodImageSchema);
+
+
+
+
+
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  return NextResponse.json({ message: "Images list API working" });
+}
