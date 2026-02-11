@@ -1,4 +1,5 @@
-// scripts/seed.ts (example)
+
+ // scripts/seed.ts (example)
 import prisma from "@/utils/prismaClient";
 
 async function main() {
